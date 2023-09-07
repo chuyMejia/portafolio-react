@@ -211,8 +211,58 @@ button:hover{
   width: 100%;
   height: 350px;
   overflow: hidden;
+  border: 4px solid rgb(102, 102, 102);
+  box-shadow: -9px 9px 0px #ccc;
+  border-radius: 0.3rem;
+
 }
 
+
+
 .work-item img{
-  width: 150%;
+  width: 120%;
+  /*margin-left: -20px;*/
+  transition: all 500ms;
+  margin-left: -45px;
 }
+
+.work-item .mask:hover img{
+  width: 130%;
+  margin-right: 30%;
+
+}
+
+.work-item span{
+  display: block;
+  color: gray;
+  margin-top: 35px;
+}
+.work-item h2{
+  display: block;
+  font-size:30px;
+  color: gray;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.work-item a{
+  color: black;
+  text-decoration: none;
+  transition: all 300ms;
+}
+
+.work-item a:hover{
+  color: #fa4529;
+  
+}
+
+.work-item h3{
+  display: block;
+  color: gray;
+  padding-top: 15px;
+  margin-top: 0px;
+  border-top: 1px solid #ddd;
+
+}
+
+
