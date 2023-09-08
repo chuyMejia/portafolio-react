@@ -27,5 +27,13 @@ export const trabajos = [
         'url':'www.fhfh.com',
         'tecnologias':'HTML,CSS,JS,PHP,MYSQL',
         'Categoria':'Desarrollo web'
+    },
+    {
+        'id':'1515',
+        'nombre':'dgfdg',
+        'url':'www.fhfh.com',
+        'tecnologias':'HTML,CSS,JS,PHP,MYSQL',
+        'Categoria':'Desarrollo web',
+        'descripcion':'Lorem ipsum dolor sit amet, consectetur adipiscing elit.Lorem ipsum dolor sit amet, consectetur adipiscing elit.Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
     }
 ]
