@@ -25,8 +25,7 @@ export const Proyecto = () => {
 
     <div className="page page-work">
       <div className="mask">
-               {/*<img src={'../public/images/'+trabajo.id+'.png'}></img> */} 
-        <img src={"/images/"+proyecto.id+".png"}></img>
+        <img src={"/images/"+proyecto.id+".png"} alt=""/>
 
       </div>
         <h1 className= "heading">{proyecto.nombre}</h1>
