@@ -11,10 +11,8 @@ export const ListadoTrabajos = ({limite = 10 }) => {
         trabajos.slice(0,limite).map(trabajo => {
           return (
             <article key={trabajo.id} className="work-item">
-              <div className="mask">
-               {/*<img src={'../public/images/'+trabajo.id+'.png'}></img> */} 
-               <img src={"images/"+trabajo.id+".png"} alt="" ></img>
-
+              <div className="mask"> 
+               <img src={"images/"+trabajo.id+".png"} alt="" />
               </div>
               <span>{trabajo.Categoria}</span>
               <h2><Link to={"/proyecto/"+trabajo.id}>{trabajo.nombre}</Link></h2>
