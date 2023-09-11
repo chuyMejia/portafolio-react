@@ -21,6 +21,8 @@ export const Proyecto = () => {
     },[])
 
   return (
+   
+
     <div className="page page-work">
       <div className="mask">
                {/*<img src={'../public/images/'+trabajo.id+'.png'}></img> */} 
@@ -28,11 +30,26 @@ export const Proyecto = () => {
 
       </div>
         <h1 className= "heading">{proyecto.nombre}</h1>
-        <p>{proyecto.tecnologias}</p>
+        <p className='detail-project'>{proyecto.tecnologias}</p>
+        
+        <h2>Descripción General:</h2>
         <p>{proyecto.descripcion}</p>
-        <a href={"https://"+proyecto.url} target="_blank">IR AL PROYECTO</a>
-  
-    
+        
+        
+      {/* Accede a las tecnologías detalladas si existen */}
+      {proyecto['tecnologias-detail'] && (
+        <div>
+          <h2>Tecnologías Detalladas:</h2>
+          <ul>
+            {proyecto['tecnologias-detail'].map((tecnologia, index) => (
+              <li key={index}>
+                <strong>{tecnologia.nombre}:</strong> {tecnologia.descripcion}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <a href={"https://"+proyecto.url} target="_blank">IR AL PROYECTO</a>
   </div>
   )
 }

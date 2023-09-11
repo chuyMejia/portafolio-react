@@ -220,8 +220,16 @@ button
   border-radius: 0.3rem;
 
 }
+.page-work h1{
+  /*width: 40%;*/
+  transition: all 300ms;
+}
 
 
+.page-work h1:hover{
+  color: #fa4529;
+  transition: all 300ms;
+}
 
 .work-item img{
   width: 120%;
@@ -273,6 +281,49 @@ button
 .page-work .mask{
   height: 300px;
   overflow: hidden;
-  box-shadow: 0px 0px 20px #ddd;
+ /* box-shadow: 0px 0px 20px #ddd;*/
+ box-shadow: -9px 9px 0px #ccc;
+
+
+  border: 2px solid #8d8d8d;
+  border-radius: 0.3rem;
+
 
 }
+
+
+.detail-project{
+  color: rgb(172, 172, 172);
+  margin-top: -50px;
+}
+
+.c_index h1{
+  font-size: 38px;
+  font-weight: 100;
+}
+
+.c_index h2{
+
+  color: rgb(0, 103, 199);
+  
+}
+.c_index p{
+  font-weight: 700;
+  color: rgb(165, 165, 165);
+  
+}
+
+
+.columns{
+  display: flex;
+}
+
+.columns strong{
+color: #616161;
+}
+
+.m_contact{
+  display: flex;
+  justify-content: space-around;
+}
+

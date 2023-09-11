@@ -5,12 +5,18 @@ import { ListadoTrabajos } from './ListadoTrabajos'
 export const Inicio = () => {
   return (
     <div className="home">
-      <h1>Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Integer finibus fermentum diam,</strong> ac dapibus leo ultricies in. Nam faucibus justo non tristique laoreet. Morbi sit amet ante finibus, rhoncus massa a, accumsan elit. Duis scelerisque vestibulum tristique. Nulla facilisi. Nam dolor odio, tincidunt eget magna a, pretium tincidunt turpis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut venenatis ipsum elit, sed volutpat ex tincidunt sit amet. Etiam fermentum arcu enim, non dapibus tellus lacinia sit amet.</h1>
-      <h2 className="title">consectetur adipiscing elit <Link to="/contacto">CONTACTO</Link></h2>
+      <h1>Soy un apasionado desarrollador web con experiencia sólida en
+desarrollo y mantenimiento de <strong>sitios web y aplicaciones.</strong> Mi
+destreza incluye la creación de interfaces de usuario
+funcionales, así como la gestión eficiente de <strong>bases de datos</strong> para
+garantizar un rendimiento óptimo. Constantemente estoy
+buscando nuevas oportunidades para mejorar mis habilidades
+de esta forma ofrecer soluciones</h1>
+      <h2 className="title">----<Link to="/contacto">CONTACTO</Link></h2>
       
       <section className="last-works">
       <h2 className="heading">Projectos</h2>
-      <p>consectetur adipiscing elit. Integer finibus ferment</p>
+      <p><Link to="/portafolio">Ver todos los proyectos</Link> </p>
       <ListadoTrabajos limite="2"/>
       </section>
     </div>
