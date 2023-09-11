@@ -6,11 +6,9 @@ export const Proyecto = () => {
     const [proyecto,setProyecto] = useState({});
 
 
-    {/*recibo los paramertod*/}
     const params = useParams();
 
     useEffect(()=>{
-        {/*uso hook que se ejecuta solo una vez []*/ }
         let proyecto = trabajos.filter(trabajo => trabajo.id === params.id );
 
         setProyecto(proyecto[0]);
@@ -35,7 +33,6 @@ export const Proyecto = () => {
         <p>{proyecto.descripcion}</p>
         
         
-      {/* Accede a las tecnologías detalladas si existen */}
       {proyecto['tecnologias-detail'] && (
         <div>
           <h2>Tecnologías Detalladas:</h2>
