@@ -16,7 +16,7 @@ export const Proyecto = () => {
         console.log(proyecto);
         
 
-    },[])
+    },[params.id])
 
   return (
    
@@ -45,7 +45,9 @@ export const Proyecto = () => {
           </ul>
         </div>
       )}
-      <a href={"https://"+proyecto.url} target="_blank">IR AL PROYECTO</a>
+      {/*<a href={"https://"+proyecto.url} target="_blank">IR AL PROYECTO</a>*/}
+      <a href={"https://"+proyecto.url} target="_blank" rel="noreferrer">IR AL PROYECTO</a>
+
   </div>
   )
 }
