@@ -7,7 +7,6 @@ import { Footer } from '../components/layout/Footer';
 import { HeaderNav } from '../components/layout/HeaderNav';
 import { Portafolio } from '../components/Portafolio';
 import { Proyecto } from '../components/Proyecto';
-import { Servicios } from '../components/Servicios';
 
 export const MisRutas = () => {
   return (
