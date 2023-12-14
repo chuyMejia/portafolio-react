@@ -1,44 +1,35 @@
-import React from 'react'
+import React, { useState } from 'react';
 
 export const Contacto = () => {
-  return (
+  const [nombre, setNombre] = useState('example');
+  const [correo, setCorreo] = useState('example@gmail.com');
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+
+    setNombre(e.target.elements.nombre.value);
+    setCorreo(e.target.elements.correo.value);
+  };
+
+  return (
     <div className="page">
-      <h1 className="heading">Contacto</h1>
+      <h1 className="heading">Formulario</h1>
       <div className='m_contact'>
         <div className='con'>
-          <form className="contact" action="mailto:jesussoft95@gmail.com">
-            <input type="text" placeholder="Nombre" />
-
-            <input type="text" placeholder="Apellido" />
-
-            <input type="email" placeholder="email" />
-
-            <textarea placeholder="contacto" />
-
+          <form className="contact" onSubmit={handleFormSubmit}>
+            <input type="text" name="nombre" placeholder="Nombre" defaultValue={nombre} />
+            <input type="email" name="correo" placeholder="Correo electrónico" defaultValue={correo} />
             <input type="submit" value="ENVIAR" />
-
-
           </form>
-
-
         </div>
         <div className='con'>
-        <div className="contact-card">
-              <h2>Datos de Contacto</h2>
-              <p>Nombre: Jesus Alberto MejiaRamos</p>
-              <p>Correo Electrónico: jesussoft95@gmail.com</p>
-              <p>Teléfono: (55)71967446</p>
-              <p>Dirección: Queretaro,Queretaro</p>
-            </div>
-        
+          <div className="contact-card">
+            <h2>DATA</h2>
+            <h3>{nombre}</h3>
+            <h3>{correo}</h3>
+          </div>
         </div>
-
-
-
-
       </div>
-
     </div>
-  )
-}
+  );
+};
