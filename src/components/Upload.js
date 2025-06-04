@@ -12,36 +12,73 @@ import {
   Legend,
 } from 'chart.js';
 
+import { Button, Container, Row, Col, ListGroup, Form, Tabs, Tab, Card } from 'react-bootstrap';
+
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable'; 
+
+// Registro de componentes Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+function generarPDFReporte(data) {
+  const doc = new jsPDF();
+
+  doc.text("Reporte de Conteos Globales", 10, 10);
+
+  let currentY = 20;
+
+  if (data.titulosGlobales.length > 0) {
+    autoTable(doc, {
+      head: [['Título', 'Cantidad']],
+      body: data.titulosGlobales,
+      startY: currentY,
+    });
+    currentY = doc.lastAutoTable.finalY + 10;
+  }
+
+  if (data.autoresGlobales.length > 0) {
+    autoTable(doc, {
+      head: [['Autor', 'Cantidad']],
+      body: data.autoresGlobales,
+      startY: currentY,
+    });
+    currentY = doc.lastAutoTable.finalY + 10;
+  }
+
+  if (data.citasGlobales.length > 0) {
+    autoTable(doc, {
+      head: [['Cita', 'Cantidad']],
+      body: data.citasGlobales,
+      startY: currentY,
+    });
+  }
+
+  doc.save('reporte.pdf');
+}
 
 export const Upload = () => {
   const [archivos, setArchivos] = useState([]);
-
   const [titulosGlobales, setTitulosGlobales] = useState({});
   const [autoresGlobales, setAutoresGlobales] = useState({});
   const [citasGlobales, setCitasGlobales] = useState({});
   const [datosPorArchivo, setDatosPorArchivo] = useState([]);
 
-  // Estados para paginación por bloque
-  const [paginaTitulos, setPaginaTitulos] = useState('global'); // 'global' o 'porDocumento'
-  const [paginaAutores, setPaginaAutores] = useState('global'); // 'global' o 'porDocumento'
-  const [paginaCitas, setPaginaCitas] = useState('global');     // 'global' o 'porDocumento'
-  const [paginaEditoriales, setPaginaEditoriales] = useState('global'); // nuevo
-
-  // Funciones existentes para extraer títulos, autores y citas
+  // Regex y extracción
   const extraerTitulosReferencias = (texto) => {
-    const regex = /\(\d{4}(?:, [a-zA-Z]+)?\)\.\s*(.+?)(?:\n|\. https?:)/g;
+    const regex = /\(\d{4}(?:[a-z]*)?\)\.\s*([^.\n]+(?:\.\s*[^.\n]+)*)/g;
     const titulos = [];
     let match;
     while ((match = regex.exec(texto)) !== null) {
-      const titulo = match[1].replace(/\s+/g, ' ').trim();
-      if (titulo) titulos.push(titulo);
+      const titulo = match[1].trim();
+      if (titulo && !titulo.toLowerCase().startsWith("https")) {
+        titulos.push(titulo);
+      }
     }
     return titulos;
   };
 
   const extraerAutoresReferencias = (texto) => {
-    const regex = /^([^\n(]+?)\s*\(\d{4}(?:, [a-zA-Z]+)?\)/gm;
+    const regex = /^([^\n.]+?)\s*(?:\(\d{4}(?:,.*)?\)|\d{4})/gm;
     const autores = [];
     let match;
     while ((match = regex.exec(texto)) !== null) {
@@ -61,8 +98,6 @@ export const Upload = () => {
     return citas;
   };
 
-
-  
   const manejarCambioArchivos = (e) => {
     const nuevosArchivos = Array.from(e.target.files);
     setArchivos((prev) => [...prev, ...nuevosArchivos]);
@@ -79,7 +114,7 @@ export const Upload = () => {
     let globalTitulos = {};
     let globalAutores = {};
     let globalCitas = {};
-   // let globalEditoriales = {};
+
     const porArchivoDatos = [];
 
     for (const archivo of archivos) {
@@ -88,12 +123,10 @@ export const Upload = () => {
       const titulos = extraerTitulosReferencias(texto);
       const autores = extraerAutoresReferencias(texto);
       const citas = extraerCitas(texto);
-      //const editoriales = extraerEditoriales(texto);
 
       const titulosContados = contarFrecuencias(titulos);
       const autoresContados = contarFrecuencias(autores);
       const citasContadas = contarFrecuencias(citas);
-    //  const editorialesContadas = contarFrecuencias(editoriales);
 
       for (const [titulo, cant] of Object.entries(titulosContados)) {
         globalTitulos[titulo] = (globalTitulos[titulo] || 0) + cant;
@@ -104,31 +137,31 @@ export const Upload = () => {
       for (const [cita, cant] of Object.entries(citasContadas)) {
         globalCitas[cita] = (globalCitas[cita] || 0) + cant;
       }
-      // for (const [editorial, cant] of Object.entries(editorialesContadas)) {
-      //   globalEditoriales[editorial] = (globalEditoriales[editorial] || 0) + cant;
-      // }
 
       porArchivoDatos.push({
         nombre: archivo.name,
         titulos: titulosContados,
         autores: autoresContados,
-        citas: citasContadas
-     //: editorialesContadas,
+        citas: citasContadas,
       });
     }
 
     setTitulosGlobales(globalTitulos);
     setAutoresGlobales(globalAutores);
     setCitasGlobales(globalCitas);
-    // setEditorialesGlobales(globalEditoriales);
     setDatosPorArchivo(porArchivoDatos);
   };
 
-
+  const truncarNombre = (nombre, sufijo, index) => {
+    const maxLen = 20;
+    const base = nombre.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_");
+    const truncado = base.substring(0, maxLen);
+    return `${truncado}_${sufijo}_${index}`;
+  };
 
   const exportarPorDocumentoExcel = () => {
     const libro = XLSX.utils.book_new();
-  
+
     // --- HOJA GLOBAL TÍTULOS ---
     const globalTitulos = Object.entries(titulosGlobales).map(([item, cant]) => ({
       Título: item,
@@ -136,7 +169,7 @@ export const Upload = () => {
     }));
     const hojaGlobalTitulos = XLSX.utils.json_to_sheet(globalTitulos);
     XLSX.utils.book_append_sheet(libro, hojaGlobalTitulos, 'Global_Titulos');
-  
+
     // --- HOJA GLOBAL AUTORES ---
     const globalAutores = Object.entries(autoresGlobales).map(([item, cant]) => ({
       Autor: item,
@@ -144,7 +177,7 @@ export const Upload = () => {
     }));
     const hojaGlobalAutores = XLSX.utils.json_to_sheet(globalAutores);
     XLSX.utils.book_append_sheet(libro, hojaGlobalAutores, 'Global_Autores');
-  
+
     // --- HOJA GLOBAL CITAS ---
     const globalCitas = Object.entries(citasGlobales).map(([item, cant]) => ({
       Cita: item,
@@ -152,7 +185,7 @@ export const Upload = () => {
     }));
     const hojaGlobalCitas = XLSX.utils.json_to_sheet(globalCitas);
     XLSX.utils.book_append_sheet(libro, hojaGlobalCitas, 'Global_Citas');
-  
+
     // --- POR ARCHIVO ---
     datosPorArchivo.forEach((archivo, index) => {
       const { nombre, titulos, autores, citas } = archivo;
@@ -163,11 +196,11 @@ export const Upload = () => {
         }));
         return XLSX.utils.json_to_sheet(arr);
       };
-  
+
       const nombreTit = truncarNombre(nombre, 'Tit', index);
       const nombreAut = truncarNombre(nombre, 'Aut', index);
       const nombreCit = truncarNombre(nombre, 'Cit', index);
-  
+
       if (Object.keys(titulos).length > 0) {
         XLSX.utils.book_append_sheet(libro, crearHoja(titulos, 'Título'), nombreTit);
       }
@@ -178,340 +211,227 @@ export const Upload = () => {
         XLSX.utils.book_append_sheet(libro, crearHoja(citas, 'Cita'), nombreCit);
       }
     });
-  
+
     const buffer = XLSX.write(libro, { bookType: 'xlsx', type: 'array' });
     saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'conteos_global_y_por_documento.xlsx');
   };
-  
-  
-  const maxLen = 20;
-
-const truncarNombre = (nombre, sufijo, index) => {
-  const base = nombre.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_]/g, "_");
-  const truncado = base.substring(0, maxLen);
-  return `${truncado}_${sufijo}_${index}`;
-};
-
-  
 
   const prepararDatosGrafica = (obj) => {
     const ordenados = Object.entries(obj)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 20);
+      .slice(0, 10);
 
     return {
-      labels: ordenados.map((item) => item[0]),
+      labels: ordenados.map((item) => item[0].substring(0, 30)),
       datasets: [
         {
-          label: 'Cantidad',
+          label: 'Frecuencia',
           data: ordenados.map((item) => item[1]),
-          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          backgroundColor: 'rgba(54, 162, 235, 0.7)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
         },
       ],
     };
   };
 
-  const opcionesGrafica = (titulo) => ({
-    indexAxis: 'y',
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: {
-        display: true,
-        text: titulo,
-        font: { size: 16, weight: 'bold' },
-      },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      x: {
-        beginAtZero: true,
-        ticks: { stepSize: 1, precision: 0 },
-      },
-    },
-  });
-
   return (
-    <div className="page">
-      <h1>Subir Archivos TXT</h1>
-      <input type="file" accept=".txt" multiple onChange={manejarCambioArchivos} />
+    <Container className="my-4">
+      <h1 className="mb-4 text-center">ANALISIS REFERENCIAS BIBLIOGRAFICAS</h1>
+
+      <Form.Group controlId="formFileMultiple" className="mb-3" >
+        <Form.Label><strong>Selecciona archivos .txt (puedes seleccionar varios)</strong></Form.Label>
+        <Form.Control type="file" multiple accept=".txt" onChange={manejarCambioArchivos} />
+      </Form.Group>
 
       {archivos.length > 0 && (
+       <Card className="mb-3" style={{ border: '3px solid black' }}>
+       <Card.Body>
+         <h5>Archivos cargados:</h5>
+         <ListGroup>
+           {archivos.map((archivo, idx) => (
+             <ListGroup.Item key={idx}>{archivo.name}</ListGroup.Item>
+           ))}
+         </ListGroup>
+       </Card.Body>
+     </Card>
+     
+      )}
+
+<div style={{ display: 'flex', gap: '2%' }}>
+  <Button
+    
+    variant="primary"
+    onClick={manejarEnvio}
+    disabled={archivos.length === 0}
+    className="mb-4"
+    size="lg"
+  >
+    Procesar Archivos
+  </Button>
+
+  <Button
+    variant="danger"
+    style={{ border: '3px solid black' }}
+    onClick={() =>
+      generarPDFReporte({
+        titulosGlobales: Object.entries(titulosGlobales),
+        autoresGlobales: Object.entries(autoresGlobales),
+        citasGlobales: Object.entries(citasGlobales),
+      })
+    }
+    className="mb-4"
+    size="lg"
+  >
+    Exportar reporte PDF
+  </Button>
+
+  <Button
+    variant="success"
+    className="mb-4"
+    size="lg"
+    onClick={exportarPorDocumentoExcel}
+  >
+    Exportar Excel Global y por Documento
+  </Button>
+</div>
+
+
+      {(Object.keys(titulosGlobales).length > 0 ||
+        Object.keys(autoresGlobales).length > 0 ||
+        Object.keys(citasGlobales).length > 0) && (
         <>
-          <h4>Archivos seleccionados:</h4>
-          <ul className="archivos-lista">
-            {archivos.map((a, i) => (
-              <li key={i}>{a.name}</li>
-            ))}
-          </ul>
-          <button onClick={manejarEnvio}>Analizar Archivos</button>
+          <Tabs defaultActiveKey="titulos" className="mb-3" justify>
+            <Tab eventKey="titulos" title="Títulos">
+              <Row>
+                <Col md={6}>
+                  <h5>Global (todos los archivos)</h5>
+                  <ListGroup style={{ maxHeight: '300px', overflowY: 'auto',border: '3px solid black' }}>
+                    {Object.entries(titulosGlobales)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 20)
+                      .map(([titulo, cantidad], idx) => (
+                        <ListGroup.Item key={idx}>
+                          {titulo.length > 60 ? titulo.substring(0, 57) + '...' : titulo} — {cantidad}
+                        </ListGroup.Item>
+                      ))}
+                  </ListGroup>
+                  <div style={{ marginTop: '20px',border: '3px solid black' }}> 
+                    <Bar
+                      data={prepararDatosGrafica(titulosGlobales)}
+                      options={{ responsive: true, plugins: { legend: { display: false } } }}
+                    />
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <h5>Por Archivo</h5>
+                  {datosPorArchivo.map((archivo, idx) => (
+                    <Card key={idx} className="mb-3">
+                      <Card.Header>{archivo.nombre}</Card.Header>
+                      <ListGroup style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                        {Object.entries(archivo.titulos)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 10)
+                          .map(([titulo, cant], i) => (
+                            <ListGroup.Item key={i}>
+                              {titulo.length > 60 ? titulo.substring(0, 57) + '...' : titulo} — {cant}
+                            </ListGroup.Item>
+                          ))}
+                      </ListGroup>
+                    </Card>
+                  ))}
+                </Col>
+              </Row>
+            </Tab>
+
+            <Tab eventKey="autores"  title="Autores">
+              <Row>
+                <Col md={6}>
+                  <h5>Global (todos los archivos)</h5>
+                  <ListGroup style={{ maxHeight: '300px', overflowY: 'auto',border: '3px solid black' }}>
+                    {Object.entries(autoresGlobales)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 20)
+                      .map(([autor, cantidad], idx) => (
+                        <ListGroup.Item key={idx}>
+                          {autor.length > 60 ? autor.substring(0, 57) + '...' : autor} — {cantidad}
+                        </ListGroup.Item>
+                      ))}
+                  </ListGroup>
+                  <div style={{ marginTop: '20px',border: '3px solid black' }}>
+                    <Bar
+                      data={prepararDatosGrafica(autoresGlobales)}
+                      options={{ responsive: true, plugins: { legend: { display: false } } }}
+                    />
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <h5>Por Archivo</h5>
+                  {datosPorArchivo.map((archivo, idx) => (
+                    <Card key={idx} className="mb-3">
+                      <Card.Header>{archivo.nombre}</Card.Header>
+                      <ListGroup style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                        {Object.entries(archivo.autores)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 10)
+                          .map(([autor, cant], i) => (
+                            <ListGroup.Item key={i}>
+                              {autor.length > 60 ? autor.substring(0, 57) + '...' : autor} — {cant}
+                            </ListGroup.Item>
+                          ))}
+                      </ListGroup>
+                    </Card>
+                  ))}
+                </Col>
+              </Row>
+            </Tab>
+
+            <Tab eventKey="citas" title="Citas">
+              <Row>
+                <Col md={6}>
+                  <h5>Global (todos los archivos)</h5>
+                  <ListGroup style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {Object.entries(citasGlobales)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 20)
+                      .map(([cita, cantidad], idx) => (
+                        <ListGroup.Item key={idx}>
+                          {cita} — {cantidad}
+                        </ListGroup.Item>
+                      ))}
+                  </ListGroup>
+                  <div style={{ marginTop: '20px' }}>
+                    <Bar
+                      data={prepararDatosGrafica(citasGlobales)}
+                      options={{ responsive: true, plugins: { legend: { display: false } } }}
+                    />
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <h5>Por Archivo</h5>
+                  {datosPorArchivo.map((archivo, idx) => (
+                    <Card key={idx} className="mb-3">
+                      <Card.Header>{archivo.nombre}</Card.Header>
+                      <ListGroup style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                        {Object.entries(archivo.citas)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 10)
+                          .map(([cita, cant], i) => (
+                            <ListGroup.Item key={i}>
+                              {cita} — {cant}
+                            </ListGroup.Item>
+                          ))}
+                      </ListGroup>
+                    </Card>
+                  ))}
+                </Col>
+              </Row>
+            </Tab>
+          </Tabs>
+
+          
         </>
       )}
-{/* 
-      {(
-        // Object.keys(editorialesGlobales).length > 0) && (
-        <div style={{ marginTop: 20 }}>
-          <button onClick={exportarExcel}>Exportar a Excel</button>
-        </div>
-      )} */}
-
-{datosPorArchivo.length > 0 && (
-  <div style={{ marginTop: 20 }}>
-    <button onClick={exportarPorDocumentoExcel}>Exportar Conteos (Global + por Documento) a Excel</button>
-  </div>
-)}
-
-
-      {/* BLOQUE TÍTULOS */}
-      <section className="seccion-contenedor">
-        <h3>Títulos en referencias:</h3>
-        <div className="botones-paginacion">
-          <button
-            className={paginaTitulos === 'global' ? 'activo' : ''}
-            onClick={() => setPaginaTitulos('global')}
-          >
-            Globales
-          </button>
-          <button
-            className={paginaTitulos === 'porDocumento' ? 'activo' : ''}
-            onClick={() => setPaginaTitulos('porDocumento')}
-          >
-            Por Documento
-          </button>
-        </div>
-        {paginaTitulos === 'global' && (
-          <div className="contenido-flex">
-            <div className="lista-contenedor">
-              <ul>
-                {Object.entries(titulosGlobales)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([titulo, cant], i) => (
-                    <li key={i}>
-                      {titulo} ({cant})
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <div className="grafica-contenedor">
-              <Bar
-                options={opcionesGrafica('Títulos más frecuentes (Global)')}
-                data={prepararDatosGrafica(titulosGlobales)}
-              />
-            </div>
-          </div>
-        )}
-        {paginaTitulos === 'porDocumento' && (
-          <div className="lista-archivos">
-            {datosPorArchivo.map(({ nombre, titulos }) => (
-              <details key={nombre} className="archivo-detalle">
-                <summary>{nombre}</summary>
-                <ul>
-                  {Object.entries(titulos)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([titulo, cant], i) => (
-                      <li key={i}>
-                        {titulo} ({cant})
-                      </li>
-                    ))}
-                </ul>
-              </details>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* BLOQUE AUTORES */}
-      <section className="seccion-contenedor">
-        <h3>Autores en referencias:</h3>
-        <div className="botones-paginacion">
-          <button
-            className={paginaAutores === 'global' ? 'activo' : ''}
-            onClick={() => setPaginaAutores('global')}
-          >
-            Globales
-          </button>
-          <button
-            className={paginaAutores === 'porDocumento' ? 'activo' : ''}
-            onClick={() => setPaginaAutores('porDocumento')}
-          >
-            Por Documento
-          </button>
-        </div>
-        {paginaAutores === 'global' && (
-          <div className="contenido-flex">
-            <div className="lista-contenedor">
-              <ul>
-                {Object.entries(autoresGlobales)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([autor, cant], i) => (
-                    <li key={i}>
-                      {autor} ({cant})
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <div className="grafica-contenedor">
-              <Bar
-                options={opcionesGrafica('Autores más frecuentes (Global)')}
-                data={prepararDatosGrafica(autoresGlobales)}
-              />
-            </div>
-          </div>
-        )}
-        {paginaAutores === 'porDocumento' && (
-          <div className="lista-archivos">
-            {datosPorArchivo.map(({ nombre, autores }) => (
-              <details key={nombre} className="archivo-detalle">
-                <summary>{nombre}</summary>
-                <ul>
-                  {Object.entries(autores)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([autor, cant], i) => (
-                      <li key={i}>
-                        {autor} ({cant})
-                      </li>
-                    ))}
-                </ul>
-              </details>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* BLOQUE CITAS */}
-      <section className="seccion-contenedor">
-        <h3>Citas en el texto:</h3>
-        <div className="botones-paginacion">
-          <button
-            className={paginaCitas === 'global' ? 'activo' : ''}
-            onClick={() => setPaginaCitas('global')}
-          >
-            Globales
-          </button>
-          <button
-            className={paginaCitas === 'porDocumento' ? 'activo' : ''}
-            onClick={() => setPaginaCitas('porDocumento')}
-          >
-            Por Documento
-          </button>
-        </div>
-        {paginaCitas === 'global' && (
-          <div className="contenido-flex">
-            <div className="lista-contenedor">
-              <ul>
-                {Object.entries(citasGlobales)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([cita, cant], i) => (
-                    <li key={i}>
-                      {cita} ({cant})
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <div className="grafica-contenedor">
-              <Bar
-                options={opcionesGrafica('Citas más frecuentes (Global)')}
-                data={prepararDatosGrafica(citasGlobales)}
-              />
-            </div>
-          </div>
-        )}
-        {paginaCitas === 'porDocumento' && (
-          <div className="lista-archivos">
-            {datosPorArchivo.map(({ nombre, citas }) => (
-              <details key={nombre} className="archivo-detalle">
-                <summary>{nombre}</summary>
-                <ul>
-                  {Object.entries(citas)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([cita, cant], i) => (
-                      <li key={i}>
-                        {cita} ({cant})
-                      </li>
-                    ))}
-                </ul>
-              </details>
-            ))}
-          </div>
-        )}
-      </section>
-
-     
-
-      <style>{`
-        .page {
-          padding: 20px;
-          max-width: 900px;
-          margin: auto;
-          font-family: Arial, sans-serif;
-        }
-        .archivos-lista {
-          list-style: none;
-          padding-left: 0;
-          margin-bottom: 10px;
-        }
-        .archivos-lista li {
-          margin-bottom: 3px;
-        }
-        button {
-          cursor: pointer;
-          padding: 6px 12px;
-          margin-right: 5px;
-          border: 1px solid #007bff;
-          background-color: #fff;
-          color: #007bff;
-          border-radius: 4px;
-          font-weight: 600;
-        }
-        button.activo {
-          background-color: #007bff;
-          color: #fff;
-        }
-        .seccion-contenedor {
-          margin-top: 30px;
-          border-top: 1px solid #ddd;
-          padding-top: 20px;
-        }
-        .botones-paginacion {
-          margin-bottom: 10px;
-        }
-        .contenido-flex {
-          display: flex;
-          gap: 20px;
-          flex-wrap: wrap;
-        }
-        .lista-contenedor {
-          flex: 1 1 300px;
-          max-height: 300px;
-          overflow-y: auto;
-          border: 1px solid #ccc;
-          padding: 10px;
-          background: #fafafa;
-        }
-        .lista-contenedor ul {
-          list-style: none;
-          padding-left: 0;
-          margin: 0;
-        }
-        .lista-contenedor li {
-          margin-bottom: 4px;
-        }
-        .grafica-contenedor {
-          flex: 1 1 400px;
-          max-width: 450px;
-        }
-        .lista-archivos details {
-          margin-bottom: 10px;
-          border: 1px solid #ccc;
-          padding: 8px;
-          border-radius: 4px;
-          background: #f9f9f9;
-        }
-        .lista-archivos summary {
-          cursor: pointer;
-          font-weight: 600;
-        }
-      `}</style>
-    </div>
+    </Container>
   );
 };
