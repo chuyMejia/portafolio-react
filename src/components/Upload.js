@@ -63,30 +63,143 @@ export const Upload = () => {
   const [citasGlobales, setCitasGlobales] = useState({});
   const [datosPorArchivo, setDatosPorArchivo] = useState([]);
 
-  // Regex y extracción
-  const extraerTitulosReferencias = (texto) => {
-    const regex = /\(\d{4}(?:[a-z]*)?\)\.\s*([^.\n]+(?:\.\s*[^.\n]+)*)/g;
-    const titulos = [];
-    let match;
-    while ((match = regex.exec(texto)) !== null) {
-      const titulo = match[1].trim();
-      if (titulo && !titulo.toLowerCase().startsWith("https")) {
-        titulos.push(titulo);
-      }
-    }
-    return titulos;
+
+
+  const limpiarTitulo = (titulo) => {
+    return titulo.replace(/[^\w\sÁÉÍÓÚÑáéíóúñ.,:;¿?¡!()-]/g, '').trim();
   };
 
-  const extraerAutoresReferencias = (texto) => {
-    const regex = /^([^\n.]+?)\s*(?:\(\d{4}(?:,.*)?\)|\d{4})/gm;
-    const autores = [];
-    let match;
-    while ((match = regex.exec(texto)) !== null) {
-      const entrada = match[1].replace(/\s+/g, ' ').trim();
-      if (entrada) autores.push(entrada);
+  // Regex y extracción
+
+/*ENTRADA
+
+Este es un texto con referencias bibliográficas:
+
+Smith, J. (2020). Understanding React and its applications [Libro].
+Johnson, A. (2019). Advanced patterns in JavaScript. https://example.com
+Williams, M. (2021). A comprehensive guide to data structures. 
+Martinez, L. (2018). El desarrollo sostenible en Latinoamérica [Artículo].
+
+Otra línea sin referencias.
+
+
+
+*************FUNCTION  const extraerTitulosReferencias = (texto) => *************
+
+
+SALIDA
+
+
+[
+  "Understanding React and its applications",     
+  "Advanced patterns in JavaScript",             
+  "A comprehensive guide to data structures",     
+  "El desarrollo sostenible en Latinoamérica"     
+]
+
+
+*/
+
+
+
+
+
+
+const extraerTitulosReferencias = (texto) => {
+  const regex = /(?:\(\d{4}\)\.\s*)([^.\n\[\]]{5,}?)\s*(?=\[|https?:\/\/|\. )/gm;
+  const titulos = [];
+  let match;
+  /**
+   * 
+   *  /*
+  
+  /(?:\(\d{4}\)\.\s*)          # Busca (4 dígitos), seguido de un punto y espacio, pero no lo captura (?:)
+([^.\n\[\]]{5,}?)           # Captura texto que no tenga punto, salto línea, corchetes, al menos 5 caracteres (titulo)
+\s*                         # Posibles espacios en blanco
+(?=\[|https?:\/\/|\. )      # Mira hacia adelante para encontrar [ o "http(s)://" o un punto seguido de espacio
+/gm                         # global + multiline
+
+
+
+  
+  
+  
+  */
+   
+
+  while ((match = regex.exec(texto)) !== null) {
+    //Cuando usas una expresión regular con la bandera g (global), el método exec() recuerda dónde quedó la última búsqueda
+    let titulo = match[1].trim();
+
+    if (titulo && !titulo.toLowerCase().startsWith("https")) {
+      titulo = limpiarTitulo(titulo); // 🧼 APLICAR LIMPIEZA
+      titulos.push(titulo);
     }
-    return autores;
-  };
+  }
+
+  return titulos;
+};
+
+
+
+/**Esta función sirve para extraer solo la parte del texto que corresponde a las referencias, descartando el resto del documento.
+ * 
+ * ENTRADA
+ * Introducción al documento.
+Aquí va el contenido principal.
+
+REFERENCIAS BIBLIOGRÁFICAS
+- Pérez, J. (2020). Libro sobre React.
+- Gómez, A. (2019). Artículo sobre JavaScript.
+ * 
+ * SALIDA
+ * 
+ * REFERENCIAS BIBLIOGRÁFICAS
+- Pérez, J. (2020). Libro sobre React.
+- Gómez, A. (2019). Artículo sobre JavaScript.
+ * 
+ * 
+ */
+const obtenerTextoReferencias = (texto) => {
+  const inicio = texto.indexOf("REFERENCIAS BIBLIOGRÁFICAS");//ENCUNTRA EL INDICE DONDE EMPIEZA EL REFERENCIAS BIBLIOGRÁFICAS
+  if (inicio === -1) return '';//SI NO ENEUNTRA REGRESA VACIO
+  return texto.slice(inicio);// LO PARTE SOLO PARA ANLIZAR LAS REFERENCIAS 
+
+};
+
+const extraerAutoresReferencias = (texto) => {
+  const referencias = obtenerTextoReferencias(texto); //SOLO LE PASA EL TEXTO CON LAS REFERECIAS
+  const regex = /^([A-ZÁÉÍÓÚÑ][\w\s.,\-&]+?)\s*\(\d{4}\)/gm;
+  const autores = [];
+  let match;
+
+  while ((match = regex.exec(referencias)) !== null) {
+    //Cuando usas una expresión regular con la bandera g (global), el método exec() recuerda dónde quedó la última búsqueda
+    const autor = match[1].trim();
+    if (
+      autor &&
+      !autor.toLowerCase().startsWith("https") &&//VERIFICA QUE NO SEA NULO
+      autor.length > 3//VERIFICA QUE LA CADENA SE MAYOR  A 3 CARACTERES 
+    ) {
+      autores.push(autor);
+    }
+  }
+
+
+  /**
+   * SALIDA
+   * 
+   * [
+  "García Márquez, J.",
+  "Pérez, L. & Gómez, R.",
+  "Fernández, A."
+]
+
+   * 
+   */
+
+  return autores;
+};
 
   const extraerCitas = (texto) => {
     const regex = /\([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+, \d{4}\)/g;
@@ -103,30 +216,90 @@ export const Upload = () => {
     setArchivos((prev) => [...prev, ...nuevosArchivos]);
   };
 
+
+  //ENTRADA  contarFrecuencias(["manzana", "pera", "manzana", "uva", "pera", "manzana"])
+/*
+.reduce() recorre el array y acumula resultados.
+
+
+*/
   const contarFrecuencias = (arr) => {
     return arr.reduce((acc, item) => {
-      acc[item] = (acc[item] || 0) + 1;
+      acc[item] = (acc[item] || 0) + 1;//acc[item] || 0: si el ítem ya existe en el acumulador, se usa su valor; si no, se usa 0
       return acc;
     }, {});
   };
+  /**
+   * Salida
+   * 
+   * {
+  manzana: 3,
+  pera: 2,
+  uva: 1
+}
+
+   * 
+   */
 
   const manejarEnvio = async () => {
+    //ACUMULADORES GLOBALES
     let globalTitulos = {};
     let globalAutores = {};
     let globalCitas = {};
 
     const porArchivoDatos = [];
+    /*Esta lista guardará la información separada por cada archivo procesado. Para cada archivo se almacenará su nombre y los conteos de títulos, autores y citas encontrados en ese archivo.*/
 
     for (const archivo of archivos) {
       const texto = await archivo.text();
+      //SE LEE EL CONTENIDO DE LOS ARCHIVOS DE FORMA ASINCRONA CUANDO ACABA DE LEER UNO EMPIEZA CON EL OTRO
 
       const titulos = extraerTitulosReferencias(texto);
       const autores = extraerAutoresReferencias(texto);
       const citas = extraerCitas(texto);
 
+      /*
+      [
+  "Smith, 2020",
+  "Johnson y Lee, 2018",
+  "García et al., 2019"
+]
+      */
+
       const titulosContados = contarFrecuencias(titulos);
       const autoresContados = contarFrecuencias(autores);
       const citasContadas = contarFrecuencias(citas);
+
+      /*
+      titulosContados = {
+        'Título A': 2,
+        'Título B': 1
+      };
+
+      
+      */
+
+      /*Object.entries(titulosContados)
+      
+      const titulosContados = {
+  "Título A": 3,
+  "Título B": 5,
+  "Título C": 1
+};
+
+
+A
+
+
+[
+  ["Título A", 3],
+  ["Título B", 5],
+  ["Título C", 1]
+]
+
+      
+      
+      */
 
       for (const [titulo, cant] of Object.entries(titulosContados)) {
         globalTitulos[titulo] = (globalTitulos[titulo] || 0) + cant;
@@ -137,6 +310,13 @@ export const Upload = () => {
       for (const [cita, cant] of Object.entries(citasContadas)) {
         globalCitas[cita] = (globalCitas[cita] || 0) + cant;
       }
+      /*
+      titulosContados = { "Título A": 3, "Título B": 2 }
+        Object.entries(titulosContados) = [["Título A", 3], ["Título B", 2]]
+
+      
+      
+      */
 
       porArchivoDatos.push({
         nombre: archivo.name,

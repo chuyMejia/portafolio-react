@@ -6,15 +6,18 @@ export const HeaderNav = () => {
     <header className='header'>
         <div className="logo">
             <span></span>
-        <h3>Programación Avanzada y BD</h3>
+        <h3>Abschlussprojekt Aleman 1</h3>
         </div>
         <nav>
            <ul>
             <li>
                <NavLink to="/inicio" className={({isActive})=>isActive ? "active":"" }>Inicio</NavLink>
             </li>
-            <li>
+            {/* <li>
                <NavLink to="/upload" className={({isActive})=>isActive ? "active":"" }>Upload</NavLink>
+            </li> */}
+            <li>
+               <NavLink to="/memorama" className={({isActive})=>isActive ? "active":"" }>Memorama</NavLink>
             </li>
             {/*<li>
                <NavLink to="/servicios" className={({isActive})=>isActive ? "active":"" }>servicios</NavLink>

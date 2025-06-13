@@ -8,6 +8,10 @@ import { HeaderNav } from '../components/layout/HeaderNav';
 import { Upload } from '../components/Upload';
 import { Proyecto } from '../components/Proyecto';
 import { Servicios } from '../components/Servicios';
+import MemoramaFrases from '../components/Memorama';
+
+
+
 
 export const MisRutas = () => {
   return (
@@ -20,6 +24,7 @@ export const MisRutas = () => {
          <Route path="/" element={<Navigate to="/inicio"/>}></Route>
          <Route path="/inicio" element={<Inicio/>}></Route>
          <Route path="/Upload" element={<Upload/>}></Route>
+         <Route path="/Memorama" element={<MemoramaFrases/>}></Route>
          <Route path="/servicios" element={<Servicios/>}></Route>
          <Route path="/curriculum" element={<Curriculum/>}></Route>
          <Route path="/contacto" element={<Contacto/>}></Route>
